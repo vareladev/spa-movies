@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
@@ -66,3 +67,7 @@ This section has moved here: https://facebook.github.io/create-react-app/docs/de
 ### `npm run build` fails to minify
 
 This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
+=======
+# spa-movies
+Página front-end implementada utilizando la biblioteca Javascript React y basandose en la filosofía SPA (Single Page Application), la API que se consume es: https://github.com/vareladev/api-restful-movies
+>>>>>>> 7f16e0dd1f725e4b694589abe7ee4a8f2bfe1291
