@@ -1,0 +1,9 @@
+{
+    "url": "",
+    "moviesNews": "/api/movies/news",
+    "seriesNews": "/api/series/news",
+    "outStanding": "/api/outstanding",
+    "trailers": "/api/trailers",
+    "movieDetail": "/api/movies/",
+    "serieDetail": "/api/series/"
+}

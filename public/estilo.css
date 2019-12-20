@@ -1,0 +1,53 @@
+
+
+.nopadding {
+    padding: 0 !important;
+    margin: 0 !important;
+ }
+
+.row {
+    /* border-radius: 4px; */
+    background-color: #fff;
+}
+
+.header{
+    background-color: black;
+    color: #e50914;
+}
+
+.title:link {
+	text-decoration: none;
+	color: #e50914;
+}
+
+.title:visited {
+  text-decoration: none;
+  color: #e50914;
+
+}
+
+.title:hover {
+  text-decoration: none;
+  color: #e50914;
+}
+
+.title:active {
+  text-decoration: none;
+  color: #e50914;
+}
+
+
+.jumbotron {
+    padding-top: 2rem;
+    padding-bottom: 1rem;
+}
+
+.footer{
+    background-color: black;
+    color: #fff;
+}
+
+.mylink:hover{
+  cursor: pointer;
+  text-decoration: underline ;
+}
