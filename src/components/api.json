@@ -1,9 +1,14 @@
 {
     "url": "",
     "moviesNews": "/api/movies/news",
+    "moviesAll": "/api/movies/all",
     "seriesNews": "/api/series/news",
+    "seriesAll": "/api/series/all",
     "outStanding": "/api/outstanding",
     "trailers": "/api/trailers",
     "movieDetail": "/api/movies/",
-    "serieDetail": "/api/series/"
+    "serieDetail": "/api/series/",
+    "moviesAdd": "/api/movies/post",
+    "seriesAdd": "/api/series/post",
+    "getActors": "/api/actors"
 }
