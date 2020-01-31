@@ -3,24 +3,29 @@ import ReactTagInput from "@pathofdev/react-tag-input";
 import "@pathofdev/react-tag-input/build/index.css";
 import Select from 'react-select';
 import Api from '../api.json'
+import SweetAlert from 'react-bootstrap-sweetalert';
 
 class AddMedia extends React.Component{
     constructor(props) {
         super(props);
         this.state = {
-            title: "El perfume",
-            year: "2006",
-            yearStart: "2007",
-            yearEnd: "2008",
-            duration : "12:12",
+            title: "",
+            year: "",
+            yearStart: "",
+            yearEnd: "",
+            duration : "",
             seasons: 0,
-            description: "descrpcion",
-            director: "director",
+            description: "",
+            director: "",
             mediaType: 1,
             outstanding: 0,
-            creators: ["Erick varela","Andrea Navarrete"],
+            creators: [],
             actorOptions : [],
             actorsSelectedOptions: [],
+            isMediaSaved: false,
+            incompleteField: false,
+            imgCover: "https://via.placeholder.com/185x278",
+            imgPreview: "https://via.placeholder.com/300x169",
         };
 
         this.handleInputChange = this.handleInputChange.bind(this);
@@ -82,6 +87,7 @@ class AddMedia extends React.Component{
                     <option key="1" value="1">Película</option>
                     <option key="2" value="2">Serie</option>
                 </select>
+                
             </div>
         );
         ///////////////////////////////////////////////////////////
@@ -90,7 +96,7 @@ class AddMedia extends React.Component{
         form.push(
             <div key={i++}  className="form-row">
                 <div key={i++} className="form-group col-md-6">
-                    <label htmlFor="title">Titulo:</label>
+                    <label htmlFor="title"><span style={{color: "red", fontWeight: "bold"}}>*</span> Titulo:</label>
                     <input onChange={this.handleInputChange} type="text" className="form-control" name="title" required value={this.state.title}/>
                 </div>
                 <div className="form-group col-md-6">
@@ -186,16 +192,28 @@ class AddMedia extends React.Component{
             );
         }
         ///////////////////////////////////////////////////////////
-        //setting conver and previe images
+        //setting cover and preview images
         form.push(
             <div key={i++} className="form-row">
-                <div className="form-group col-md-6">
+                <div className="form-group col-md-6 d-flex flex-column">
+                    <div style={{height: "100px",}} className="d-flex justify-content-center">
+                        <img alt="cover" height="100px" src={this.state.imgCover} />
+                    </div> 
                     <label htmlFor="img_url">Cover:</label>
-                    <input ref={this.imgUrl} type="file" className="form-control-file" name="img_url" accept="image/x-png,image/gif,image/jpeg"  required />
+                    <input 
+                        onChange={()=>{this.onCoverChanged();}}
+                        type="file" className="form-control-file" name="img_url" 
+                        accept="image/x-png,image/gif,image/jpeg" />
                 </div>
-                <div className="form-group col-md-6">
+                <div className="form-group col-md-6 d-flex flex-column">
+                    <div style={{height: "100px",}} className="d-flex justify-content-center">
+                        <img alt="preview" height="100px" src={this.state.imgPreview} />
+                    </div> 
                     <label htmlFor="img_url_preview">Preview:</label>
-                    <input ref={this.imgUrlPreview} type="file" className="form-control-file" name="img_url_preview" accept="image/x-png,image/gif,image/jpeg"  required />
+                    <input 
+                        onChange={()=>{this.onPreviewChanged();}}
+                        type="file" className="form-control-file" name="img_url_preview" 
+                        accept="image/x-png,image/gif,image/jpeg" />
                 </div>
             </div>
         );
@@ -204,6 +222,16 @@ class AddMedia extends React.Component{
         form.push(
             <div key={i++} className="form-group">
                 <label htmlFor="actors">Selecciona los actores participantes:</label>
+                <small className="form-text text-muted">
+                    ¿No encuentras el actor que buscas? Asegurate de que haya sido registrado 
+                    <strong>
+                        <a href="# " onClick={
+                                        (event)=>{
+                                            event.preventDefault();
+                                            this.props.handler("editactor");
+                                        }}> aquí</a>
+                    </strong>
+                </small>
                 <Select
                 isMulti
                 value={this.state.actorsSelectedOptions}
@@ -212,6 +240,16 @@ class AddMedia extends React.Component{
                 />
             </div>
         );
+        ///////////////////////////////////////////////////////////
+        //notes for user
+        form.push(
+            <div key={i++} className="row" style={{marginBottom: "10px"}}>
+                <div className="col-12">
+                    <span style={{color: "red"}}>* Campos obligatorios.</span> 
+                </div>
+            </div>
+        );
+
         ///////////////////////////////////////////////////////////
         //setting confirm button
         var btnText = this.state.mediaType === 1 ? "Guardar pelicula" : "Guardar serie";
@@ -238,7 +276,9 @@ class AddMedia extends React.Component{
             !inputCover.files.length ||
             !inputPreview.files.length ||
             this.state.title === "" ){
-                alert("Algunos campos importantes estan vacios");
+                this.setState({
+                    incompleteField: true,
+                })
         }
         else{
             //generating cover and preview filenames
@@ -302,6 +342,7 @@ class AddMedia extends React.Component{
             
             //using fetch to send information to API
             var url = this.state.mediaType === 1 ?  Api.moviesAdd : Api.seriesAdd;
+            const that = this;
             fetch(Api.url+url, {
                 method: 'POST',
                 body: formData,
@@ -310,6 +351,9 @@ class AddMedia extends React.Component{
               })
               .then(function(myJson) {
                 console.log("ok");
+                that.setState({
+                    isMediaSaved: true,
+                })
               })
               .catch(function(error) {
                 console.log('Hubo un problema con la petición Fetch:' + error.message);
@@ -317,9 +361,75 @@ class AddMedia extends React.Component{
         }
     }
 
+    onCoverChanged(){
+        var inputCover = document.querySelector('input[name="img_url"]');
+        if(!inputCover.files.length){
+            this.setState({
+                imgCover: "https://via.placeholder.com/185x278",
+            })  
+        }
+        else{
+            this.setState({
+                imgCover: URL.createObjectURL(inputCover.files[0]),
+            })
+        }
+        
+    }
+
+    onPreviewChanged(){
+        var inputCover = document.querySelector('input[name="img_url_preview"]');
+        if(!inputCover.files.length){
+            this.setState({
+                imgPreview: "https://via.placeholder.com/300x169",
+            })            
+        }
+        else{
+            this.setState({
+                imgPreview: URL.createObjectURL(inputCover.files[0]),
+            })
+        }
+    }
+
+    WarningWindowManager(){
+        if(this.state.incompleteField){
+            return (
+                <SweetAlert 
+                    key="1"
+                    warning
+                    confirmBtnText="Entendido"
+                    title="¡Algunos campos estan vaciós!"
+                    onConfirm={() => {this.setState({incompleteField: false,})}}
+                    focusCancelBtn>
+                        Verifica los campos obligatorios
+                </SweetAlert>
+            );
+        }
+    }
+
+    AlertOnConfirm(){
+        var nextPage = this.state.mediaType === 1 ? "listmovie" : "listserie";
+        this.props.handler(nextPage);
+    }
+
+    renderAlert(){
+        if(this.state.isMediaSaved){
+            return (
+                <SweetAlert 
+                    success title="¡Bien!" 
+                    onConfirm={() => this.AlertOnConfirm()}
+                    onCancel={() => this.setState({isMediaSaved: false,})}
+                    >
+                        ¡El registro ha sido guardado!
+                </SweetAlert>
+            )
+        }
+    }
+
     render(){
         return (
             <div className="col-12 col-lg-8 pr-5 pt-4">
+                {this.renderAlert()}
+                {this.WarningWindowManager()}
                 <h3 className="pb-2 mb-4 border-bottom">Agregar nuevo contenido</h3>
                 {this.renderForm()}
             </div>

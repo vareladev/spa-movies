@@ -11,10 +11,13 @@ import MediaContent from './components/media/mediacontent'
 import Login from './components/Admin/login'
 
 //admin
-import ListMedia from './components/Admin/listMovie'
+import ListMedia from './components/Admin/listMedia'
 import AdminMenu from './components/Admin/adminMenu'
 import AddMedia from './components/media/addmedia'
-import EditMedia from './components/media/editMedia'
+import EditMedia from './components/media/editmedia'
+import ListActor from './components/Admin/listActors'
+import ListTrailer from './components/Admin/listTrailer'
+import TrailerEdit from './components/Admin/listTrailerEdit'
 
 
 class App extends React.Component{
@@ -22,12 +25,11 @@ class App extends React.Component{
     super(props)
     this.state = {
       //page: "index", 
-      page: "listmovie",
+      page: "index",
       idMedia: -1,
       mediaType: -1,
       mediaKey: 100  //useful for MediaContent key update, first 99 elements are reserved for rest of components
     };
-    // without bind, replaced by arrow func below
   }
 
   handler = (pagename, id, mt) => {
@@ -38,7 +40,11 @@ class App extends React.Component{
       mediaKey: this.state.mediaKey + 1
     });
   }
-  handlerAdmin = (pagename) => { this.setState({ page: pagename, }); }
+  handlerAdmin = (pagename) => { 
+    this.setState({ 
+      page: pagename, 
+      mediaKey: this.state.mediaKey + 1}); 
+  }
 
   setPage(){
     var page = [];
@@ -78,7 +84,16 @@ class App extends React.Component{
       page.push (
         <div key={this.state.mediaKey} className="row">
           <AdminMenu handler = {this.handlerAdmin}/>
-          <ListMedia />
+          <ListMedia handler = {this.handlerAdmin} handlerEdit = {this.handler} mediaType="1"/>
+        </div>
+      ); 
+    }
+
+    else if(this.state.page === "listserie"){
+      page.push (
+        <div key={this.state.mediaKey} className="row">
+          <AdminMenu handler = {this.handlerAdmin}/>
+          <ListMedia handler = {this.handlerAdmin} handlerEdit = {this.handler} mediaType="2"/>
         </div>
       ); 
     }
@@ -87,22 +102,56 @@ class App extends React.Component{
       page.push (
         <div key={this.state.mediaKey} className="row">
           <AdminMenu handler = {this.handlerAdmin}/>
-          <AddMedia />
+          <AddMedia handler = {this.handlerAdmin}/>
         </div>
       ); 
     }
 
-    else if(this.state.page === "editMedia"){
-      console.log("page: editMedia");
+    else if(this.state.page === "editmedia"){
       page.push (
-        <div key={this.state.mediaKey}> 
-          <EditMedia mediaType="2" idMedia="3" />
+        <div key={this.state.mediaKey} className="row"> 
+          <AdminMenu handler = {this.handlerAdmin}/>
+          <EditMedia id={this.state.idMedia} mediaType={this.state.mediaType} handler = {this.handlerAdmin} />
         </div>
       ); 
     }
 
+    else if(this.state.page === "editactor"){
+      page.push (
+        <div key={this.state.mediaKey} className="row"> 
+          <AdminMenu handler = {this.handlerAdmin}/>
+          <ListActor handler = {this.handlerAdmin}/>
+        </div>
+      ); 
+    }
+
+    else if(this.state.page === "listtrailer"){
+      page.push (
+        <div key={this.state.mediaKey} className="row"> 
+          <AdminMenu handler = {this.handlerAdmin}/>
+          <ListTrailer handler = {this.handlerAdmin} handlerEdit={this.handler}/>
+        </div>
+      ); 
+    }
+
+    else if(this.state.page === "newtrailer"){
+      page.push (
+        <div key={this.state.mediaKey} className="row"> 
+          <AdminMenu handler = {this.handlerAdmin}/>
+          <TrailerEdit handler = {this.handlerAdmin} actionType="1" id="0"/>
+        </div>
+      ); 
+    }
+    else if(this.state.page === "edittrailer"){
+      page.push (
+        <div key={this.state.mediaKey} className="row"> 
+          <AdminMenu handler = {this.handlerAdmin}/>
+          <TrailerEdit handler = {this.handlerAdmin} actionType="2" id={this.state.idMedia}/>
+        </div>
+      ); 
+    }
+  
     else if(this.state.page === "login"){
-      console.log("page: login");
       page.push (
         <div key={this.state.mediaKey}> 
           <Login handler = {this.handlerAdmin} />

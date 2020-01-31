@@ -1,13 +1,15 @@
 import React from 'react'
 import ReactTagInput from "@pathofdev/react-tag-input";
 import "@pathofdev/react-tag-input/build/index.css";
+import Select from 'react-select';
 import Api from '../api.json'
+import SweetAlert from 'react-bootstrap-sweetalert';
 
-class editMedia extends React.Component{
+class AddMedia extends React.Component{
     constructor(props) {
         super(props);
         this.state = {
-            id: 0,
+            id: "",
             title: "",
             year: "",
             yearStart: "",
@@ -19,35 +21,104 @@ class editMedia extends React.Component{
             mediaType: 1,
             outstanding: 0,
             creators: [],
-            isTitleDisabled: false,
+            actorOptions : [],
+            actorsSelectedOptions: [],
+            isMediaSaved: false,
+            imgCover: "https://via.placeholder.com/185x278",
+            imgCoverInitial: "",
+            imgPreview: "https://via.placeholder.com/300x169",
+            imgPreviewInitial: "",
+            incompleteField: false,
         };
 
         this.handleInputChange = this.handleInputChange.bind(this);
+        this.handleActorSelectChange = this.handleActorSelectChange.bind(this);
         this.sendForm = this.sendForm.bind(this);
-
-        this.imgUrl = React.createRef();
-        this.imgUrlPreview = React.createRef();
+    
     }
 
+    //after load page
     componentDidMount() {
-        this.setState({
-            mediaType: parseInt(this.props.mediaType),
-            isTitleDisabled: true,
-        });
-
-        var urlComplement = parseInt(this.props.mediaType) === 1 ? Api.movieDetail : Api.serieDetail;
-        fetch(Api.url+urlComplement+this.props.idMedia)
+        //getting actors data and setting actorOptions
+        fetch(Api.url+Api.getActors)
           .then(data => data.json())
           .then((data) => { 
-              console.log(data);
-              //this.setState(data)
-              console.log(this.state)
-        }); 
+                var actorOptionsTemp = [];
+                data.map((actor) => {
+                    actorOptionsTemp.push({value: actor.id, label: actor.name});
+                    return null;
+                });
+                this.setState({
+                    actorOptions: actorOptionsTemp,
+                });
+        });
 
+        //////////////////////////////////////////////
+        //Cargando datos:
+        const that = this;
+        var url = parseInt(this.props.mediaType) === 1 ? 
+                Api.url+Api.movieDetail+this.props.id :
+                Api.url+Api.serieDetail+this.props.id
+        fetch(url)
+        .then(data => data.json())
+        .then((data) => { 
+            var actorsSelectedOptions = [];
+            data.casting.map((actor) => {
+                actorsSelectedOptions.push({
+                    value: actor.id,
+                    label: actor.name
+                })
+                return null;
+            });
+            if(parseInt(this.props.mediaType) === 1) { //pelicula
+                that.setState({
+                    id: data.id,
+                    title: data.title,
+                    year: data.year,
+                    duration : data.duration,
+                    description: data.description,
+                    director: data.director,
+                    mediaType: parseInt(this.props.mediaType),
+                    outstanding: data.outstanding,
+                    actorsSelectedOptions,  
+                    imgCover: Api.url+"/"+data.img_url,
+                    imgCoverInitial: Api.url+"/"+data.img_url,
+                    imgPreview : Api.url+"/"+data.img_url_preview,
+                    imgPreviewInitial: Api.url+"/"+data.img_url_preview,
+                });
+            }
+            else{
+                var creators = [];
+                data.creators.map((director) => {
+                    creators.push(director.name);
+                    return null;
+                });
+                that.setState({
+                    id: data.id,
+                    title: data.title,
+                    yearStart: data.year_start,
+                    yearEnd: data.year_end,
+                    seasons: data.seasons,
+                    description: data.description,
+                    mediaType: parseInt(this.props.mediaType),
+                    outstanding: data.outstanding,
+                    creators,
+                    actorsSelectedOptions,
+                    imgCover: Api.url+"/"+data.img_url,
+                    imgCoverInitial: Api.url+"/"+data.img_url,
+                    imgPreview : Api.url+"/"+data.img_url_preview,
+                    imgPreviewInitial: Api.url+"/"+data.img_url_preview,
+                });
+            }
+        });
     }
 
+    //manage data for multiple select used for select an actor's list
+    handleActorSelectChange = (actorsSelectedOptions) => {
+        this.setState({ actorsSelectedOptions });
+      }
 
-
+    //manage form inputs and setting state
     handleInputChange(event) {
         const target = event.target;
         var value = target.value;
@@ -60,30 +131,32 @@ class editMedia extends React.Component{
         this.setState({
           [name]: value
         });
-
-        console.log("destacado?: ",this.state.outstanding)
     }
 
+    //creates and configure the input form, it's depends of media type: movie or serie
     renderForm(){
-        var form = [];
-        var i = 0;
-
-        //selector de tipo de media
+        var form = []; //form's repository
+        var i = 0; //auxiliar for key
+        //mediatype selector
         form.push(
             <div key={i++} className="form-group">
-                <label htmlFor="mediaType">Seleccione tipo de recurso:</label>
-                <select disabled={this.state.isTitleDisabled} name="mediaType" className="form-control" onChange={this.handleInputChange} value={this.state.mediaType}>
+                <label htmlFor="mediaType">Tipo de contenido (No es posible editar):</label>
+                <select name="mediaType" className="form-control" value={this.state.mediaType} readOnly>
                     <option key="1" value="1">Película</option>
                     <option key="2" value="2">Serie</option>
                 </select>
+                
             </div>
         );
-        //title
-        var type = this.state.mediaType === 1 ? "pelicula" : "serie";
+        ///////////////////////////////////////////////////////////
+        //setting title and outstanding
+        var type = this.props.mediaType === 1 ? "pelicula" : "serie";
+        var isOutStanding = this.state.outstanding === 1 ? true : false;
+
         form.push(
             <div key={i++}  className="form-row">
                 <div key={i++} className="form-group col-md-6">
-                    <label htmlFor="title">Titulo:</label>
+                    <label htmlFor="title"><span style={{color: "red", fontWeight: "bold"}}>*</span> Titulo:</label>
                     <input onChange={this.handleInputChange} type="text" className="form-control" name="title" required value={this.state.title}/>
                 </div>
                 <div className="form-group col-md-6">
@@ -91,13 +164,13 @@ class editMedia extends React.Component{
 
                     <div className="form-row ml-5">
                         <div className="form-check col-md-2">
-                            <input className="form-check-input" type="radio" name="outstanding" id="out1" value="1" onChange={this.handleInputChange} checked={this.state.outstanding === 1}/>
+                            <input checked={isOutStanding} className="form-check-input" type="radio" name="outstanding" id="out1" value="1" onChange={this.handleInputChange}/>
                             <label className="form-check-label" htmlFor="out1">
                                 Si
                             </label>
                         </div>
                         <div className="form-check col-md-2"> 
-                            <input className="form-check-input" type="radio" name="outstanding" id="out2" value="0" onChange={this.handleInputChange} checked={this.state.outstanding === 0}/>
+                            <input checked={!isOutStanding} className="form-check-input" type="radio" name="outstanding" id="out2" value="0" onChange={this.handleInputChange}/>
                             <label className="form-check-label" htmlFor="out2">
                                 No
                             </label>
@@ -110,7 +183,7 @@ class editMedia extends React.Component{
 
         )
         ///////////////////////////////////////////////////////////
-        //año y duracion
+        //setting year, duration and seasons
         if(this.state.mediaType === 1){
             form.push(
                 <div key={i++}  className="form-row">
@@ -148,7 +221,7 @@ class editMedia extends React.Component{
             );
         }
         ///////////////////////////////////////////////////////////
-        //description
+        //setting description
         form.push(
             <div key={i++} className="form-group">
                 <label htmlFor="description">Descripción:</label>
@@ -156,7 +229,7 @@ class editMedia extends React.Component{
             </div>
         );
         ///////////////////////////////////////////////////////////
-        //director or creators
+        //setting director or creators
         if(this.state.mediaType === 1){
             form.push(
                 <div key={i++} className="form-group">
@@ -179,26 +252,71 @@ class editMedia extends React.Component{
             );
         }
         ///////////////////////////////////////////////////////////
-        //images
+        //setting cover and preview images
         form.push(
             <div key={i++} className="form-row">
-                <div className="form-group col-md-6">
+                <div className="form-group col-md-6 d-flex flex-column">
+                    <div style={{height: "100px",}} className="d-flex justify-content-center">
+                        <img alt="cover" height="100px" src={this.state.imgCover} />
+                    </div> 
                     <label htmlFor="img_url">Cover:</label>
-                    <input ref={this.imgUrl} type="file" className="form-control-file" name="img_url" accept="image/x-png,image/gif,image/jpeg"  required />
+                    <input 
+                        onChange={()=>{this.onCoverChanged();}}
+                        type="file" className="form-control-file" name="img_url" 
+                        accept="image/x-png,image/gif,image/jpeg" />
                 </div>
-                <div className="form-group col-md-6">
+                <div className="form-group col-md-6 d-flex flex-column">
+                    <div style={{height: "100px",}} className="d-flex justify-content-center">
+                        <img alt="preview" height="100px" src={this.state.imgPreview} />
+                    </div> 
                     <label htmlFor="img_url_preview">Preview:</label>
-                    <input ref={this.imgUrlPreview} type="file" className="form-control-file" name="img_url_preview" accept="image/x-png,image/gif,image/jpeg"  required />
+                    <input 
+                        onChange={()=>{this.onPreviewChanged();}}
+                        type="file" className="form-control-file" name="img_url_preview" 
+                        accept="image/x-png,image/gif,image/jpeg" />
                 </div>
             </div>
         );
-        //Boton
+        ///////////////////////////////////////////////////////////
+        //setting actors
+        form.push(
+            <div key={i++} className="form-group">
+                <label htmlFor="actors">Selecciona los actores participantes:</label>
+                <small className="form-text text-muted">
+                    ¿No encuentras el actor que buscas? Asegurate de que haya sido registrado 
+                    <strong>
+                        <a href="# " onClick={
+                                        (event)=>{
+                                            event.preventDefault();
+                                            this.props.handler("editactor");
+                                        }}> aquí</a>
+                    </strong>
+                </small>
+                <Select
+                isMulti
+                value={this.state.actorsSelectedOptions}
+                onChange={this.handleActorSelectChange}
+                options={this.state.actorOptions}
+                />
+            </div>
+        );
+        ///////////////////////////////////////////////////////////
+        //notes for user
+        form.push(
+            <div key={i++} className="row" style={{marginBottom: "10px"}}>
+                <div className="col-12">
+                    <span style={{color: "red"}}>* Campos obligatorios.</span> 
+                </div>
+            </div>
+        );
+        ///////////////////////////////////////////////////////////
+        //setting confirm button
         var btnText = this.state.mediaType === 1 ? "Guardar pelicula" : "Guardar serie";
         form.push(
-            //<input key={i++} type="submit" onClick={this.sndForm} className="btn btn-primary" value={btnText} />
             <button key={i++} onClick={this.sendForm} type="button" className="btn btn-primary">{btnText}</button>
         );
-
+        ///////////////////////////////////////////////////////////
+        //returning form
         return (
             <form>
                 {form}
@@ -206,88 +324,192 @@ class editMedia extends React.Component{
         );
     }
 
+    WarningWindowManager(){
+        if(this.state.incompleteField){
+            return (
+                <SweetAlert 
+                    key="1"
+                    warning
+                    confirmBtnText="Entendido"
+                    title="¡Algunos campos estan vaciós!"
+                    onConfirm={() => {this.setState({incompleteField: false,})}}
+                    focusCancelBtn>
+                        Verifica los campos obligatorios
+                </SweetAlert>
+            );
+        }
+    }
+
+    //manage all about send data to API
     sendForm(){
+        if(this.state.title === ""){
+            this.setState({
+                incompleteField: true,
+            });
+            return;
+        }
+        //getting conver and preview data
         var inputCover = document.querySelector('input[name="img_url"]');
         var inputPreview = document.querySelector('input[name="img_url_preview"]');
 
-        //checking important input state
-        if(
-            !inputCover.files.length ||
-            !inputPreview.files.length ||
-            this.state.title === "" ){
-                alert("Algunos campos importantes estan vacios");
+        //checking images
+        var imgInfo = [{
+            coverData: null,
+            coverName: null,
+            previewData: null,
+            previewName: null,
+        }]
+        var tempName = this.state.title.replace(/\s+/g, '_') + "_" +
+                         Math.floor(Math.random() * 1000);
+        if(inputCover.files.length){ // user uploaded a new cover image?
+            imgInfo.coverData = inputCover.files[0];
+            imgInfo.coverName = tempName + "." + inputCover.files[0].name.split('.').pop();
         }
         else{
-            //geratiing filenames
-            var inputCoverExt = inputCover.files[0].name.split('.').pop();
-            var inputPreviewExt = inputPreview.files[0].name.split('.').pop();
-            var tempName = this.state.title.replace(/\s+/g, '_') + "_" + 
-                            //Math.floor(Date.now() / 1000) + "_" + 
-                            Math.floor(Math.random() * 1000);
-            var inputCoverName = tempName + "." + inputCoverExt;
-            var inputPreviewName =  tempName + "_preview." + inputPreviewExt;
+            tempName = this.state.imgCoverInitial.split("/");
+            imgInfo.coverName = tempName[tempName.length - 1];
+        }
 
-            //formatting data to send
-            var mediaData;
-            //checking what kind of info is in the form
-            if(this.state.mediaType === 1){ //it's movie's info
-                mediaData  = {
-                    title: this.state.title,
-                    year: this.state.year,
-                    duration : this.state.duration,
-                    description: this.state.description,
-                    director: this.state.director,
-                    media_type: 1,
-                    img_url: "img/media/"+inputCoverName,
-                    img_url_preview: "img/media/"+inputPreviewName,
-                    outstanding: this.state.outstanding,
-                    url: "",
-                };
-            }else{ //its serie's info
-                mediaData  = {
-                    title: this.state.title,
-                    year_start: "2007",
-                    year_end: "2008",
-                    seasons : this.state.seasons,
-                    description: this.state.description,
-                    media_type: 2,
-                    img_url: "img/media/"+inputCoverName,
-                    img_url_preview: "img/media/"+inputPreviewName,
-                    outstanding: this.state.outstanding,
-                    url: "",
-                };
-            }
-            //console.log(JSON.stringify(mediaData));
+        if(inputPreview.files.length){ // user uploaded a new preview image?
+            imgInfo.previewData = inputPreview.files[0];
+            imgInfo.previewName = tempName + "_preview." + inputPreview.files[0].name.split('.').pop();
+        }
+        else{
+            tempName = this.state.imgPreviewInitial.split("/");
+            imgInfo.previewName = tempName[tempName.length - 1];
+        }
+        
+        //formatting data to send
+        var mediaData;
+        //checking what kind of info is in the form (movie or serie info)
+        if(this.state.mediaType === 1){ //it's movie's info
+            mediaData  = {
+                id: this.state.id,
+                title: this.state.title,
+                year: this.state.year,
+                duration : this.state.duration,
+                description: this.state.description,
+                director: this.state.director,
+                media_type: 1,
+                img_url: "img/media/"+imgInfo.coverName,
+                img_url_preview: "img/media/"+imgInfo.previewName,
+                outstanding: this.state.outstanding,
+                url: "",
+            };
+        }else{ //its serie's info
+            mediaData  = {
+                id: this.state.id,
+                title: this.state.title,
+                year_start: this.state.yearStart,
+                year_end: this.state.yearEnd,
+                seasons : this.state.seasons,
+                description: this.state.description,
+                media_type: 2,
+                img_url: "img/media/"+imgInfo.coverName,
+                img_url_preview: "img/media/"+imgInfo.previewName,
+                outstanding: this.state.outstanding,
+                url: "",
+            };
+        }
 
-            const formData = new FormData();
-            formData.append('mediaData',JSON.stringify(mediaData));        
-            formData.append('inputCover', inputCover.files[0]);
-            formData.append('inputPreview', inputPreview.files[0]);
-            formData.append('coverName', inputCoverName);
-            formData.append('previewName', inputPreviewName);
-            if(this.state.mediaType === 2)
-                formData.append('creators', this.state.creators);
-            
+        //creating arrays with id's actors
+        var actorList = [];
+        if(this.state.actorsSelectedOptions){
+            this.state.actorsSelectedOptions.map((actor) => {
+                actorList.push(actor.value);
+                return null;
+            });
+        }
 
-            var url = this.state.mediaType === 1 ?  Api.moviesAdd : Api.seriesAdd;
-            fetch(Api.url+url, {
-                method: 'POST',
-                body: formData,
-            }).then(function(response) {
-                return response.json();
-              })
-              .then(function(myJson) {
+        //creating formData to send and setting all data that will contain
+        const formData = new FormData();
+        formData.append('mediaData',JSON.stringify(mediaData));     
+            formData.append('inputCover', imgInfo.coverData);
+            formData.append('inputPreview', imgInfo.previewData);
+            formData.append('coverName', imgInfo.coverName);
+            formData.append('previewName', imgInfo.previewName);
+        formData.append('actorList', actorList);
+        if(this.state.mediaType === 2) //if it's serie send creator's info too!
+            formData.append('creators', this.state.creators);
+
+        //using fetch to send information to API
+        var url = this.state.mediaType === 1 ?  Api.moviesEdit : Api.seriesEdit;
+        const that = this;
+        fetch(Api.url+url, {
+            method: 'PUT',
+            body: formData,
+        }).then(function(response) {
+            return response.json();
+            })
+            .then(function(myJson) {
                 console.log("ok");
-              })
-              .catch(function(error) {
+                that.setState({
+                    isMediaSaved: true,
+                })
+            })
+            .catch(function(error) {
                 console.log('Hubo un problema con la petición Fetch:' + error.message);
-              });
+            });
+    }
+
+    onCoverChanged(){
+        var inputCover = document.querySelector('input[name="img_url"]');
+        if(!inputCover.files.length){
+            this.setState({
+                imgCover: Api.url+this.state.imgCoverInitial,
+            })  
+        }
+        else{
+            this.setState({
+                imgCover: URL.createObjectURL(inputCover.files[0]),
+            })
+        }
+        
+    }
+    onPreviewChanged(){
+        var inputCover = document.querySelector('input[name="img_url_preview"]');
+        if(!inputCover.files.length){
+            this.setState({
+                imgPreview: Api.url+this.state.imgPreviewInitial,
+            })            
+        }
+        else{
+            this.setState({
+                imgPreview: URL.createObjectURL(inputCover.files[0]),
+            })
+        }
+    }
+
+    AlertOnConfirm(){
+        var nextPage = this.state.mediaType === 1 ? "listmovie" : "listserie";
+        this.props.handler(nextPage);
+    }
+
+    renderAlert(){
+        if(this.state.isMediaSaved){
+            return (
+                <SweetAlert 
+                    success title="¡Bien!" 
+                    onConfirm={() => this.AlertOnConfirm()}
+                    onCancel={() => this.setState({isMediaSaved: false,})}
+                    >
+                        ¡El registro ha sido actualizado!
+                </SweetAlert>
+            )
         }
     }
 
     render(){
-        return this.renderForm();
+        var title = parseInt(this.props.mediaType) === 1 ? "Editar película" : "Editar serie";
+        return (
+            <div className="col-12 col-lg-8 pr-5 pt-4">
+                {this.renderAlert()}
+                {this.WarningWindowManager()}
+                <h3 className="pb-2 mb-4 border-bottom">{title}</h3>
+                {this.renderForm()}
+            </div>
+            );
     }
 }
 
-export default editMedia;
+export default AddMedia;

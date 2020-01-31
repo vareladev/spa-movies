@@ -29,7 +29,7 @@ class SidebarList extends React.Component{
             var data = this.checkType(Api.url, med);
 
             mediaList.push(
-                    <li key={i} className="list-group-item border-0 pt-0 pb-3" onClick={() => { if(this.props.type === "trailer") return false; this.props.handler('media',med.id,med.media_type)}}> 
+                    <li key={i} className="list-group-item border-0 pt-0 pb-3" onClick={(event) => {if(this.props.type === "trailer") return false; event.preventDefault(); this.props.handler('media',med.id,med.media_type)}}> 
                         <a href={data.get('url')} target={data.get('target')} rel="noopener noreferrer">
                             <div className="row pl-4 pr-4 pl-lg-3 pr-lg-3"> 
                                 <div className="col-12 col-sm-12 col-md-12 col-lg-3 p-0 d-flex align-items-center justify-content-center"> 
